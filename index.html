@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>The Challenge</title>
+  <style>
+:root{
+  --ink:#111111;
+  --muted:#777777;
+  --line:#d9d9d9;
+  --soft:#f3f3f1;
+  --tom:#d44b2b;
+  --tom-soft:#df8f7f;
+  --bob:#47759f;
+  --bob-soft:#7fa9cb;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:#fff}
+body{
+  margin:0;
+  color:var(--ink);
+  background:#fff;
+  font-family:Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit}
+.app{max-width:760px;margin:0 auto;padding:34px 22px 110px}
+.hero{text-align:center;padding:12px 0 38px}
+.eyebrow{font-size:12px;letter-spacing:.34em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
+h1{
+  margin:0;
+  font-weight:400;
+  font-size:clamp(42px,12vw,76px);
+  letter-spacing:.16em;
+  line-height:.9;
+  text-transform:uppercase;
+}
+h1 span{display:block}
+.countdown{margin-top:34px}
+#daysLeft{font-size:56px;line-height:1;font-weight:500;letter-spacing:.02em}
+.days-label{margin-top:8px;font-size:15px;letter-spacing:.34em;color:#555;text-transform:uppercase}
+#dateNow{margin-top:12px;font-size:10px;letter-spacing:.14em;color:#999;text-transform:uppercase}
+
+.divider{border-top:1px solid var(--ink);opacity:.7}
+
+.players{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  position:relative;
+  padding:42px 0 36px;
+}
+.players:after{
+  content:"";
+  position:absolute;
+  left:50%;top:0;bottom:0;
+  width:1px;background:#e7e7e7;
+}
+.player{padding:0 28px}
+.player:first-child{padding-left:10px}
+.player:last-child{padding-right:10px}
+.player-name{
+  font-size:clamp(32px,9vw,52px);
+  font-weight:400;
+  letter-spacing:.12em;
+  margin-bottom:48px;
+}
+.tom .player-name{color:var(--tom)}
+.bob .player-name{color:var(--bob)}
+.name-rule{width:40px;height:4px;margin-top:12px;border-radius:2px}
+.tom .name-rule{background:var(--tom)}
+.bob .name-rule{background:var(--bob)}
+
+.metric{margin-bottom:42px}
+.metric-label{font-size:12px;letter-spacing:.30em;text-transform:uppercase;margin-bottom:12px}
+.metric-value{font-size:clamp(38px,10vw,58px);font-weight:400;line-height:1;margin-bottom:16px}
+.metric-value small{font-size:.58em;font-weight:400}
+.track{height:14px;background:#efefef;overflow:hidden}
+.fill{height:100%;width:0;transition:width .25s ease}
+.tom .fill.workout{background:var(--tom)}
+.tom .fill.alcohol{background:var(--tom-soft)}
+.bob .fill.workout{background:var(--bob)}
+.bob .fill.alcohol{background:var(--bob-soft)}
+.remaining{font-size:9px;letter-spacing:.16em;color:#999;margin-top:8px;text-transform:uppercase}
+
+.action{
+  display:block;
+  width:100%;
+  padding:10px 0;
+  border:0;
+  background:none;
+  color:var(--ink);
+  cursor:pointer;
+  text-align:left;
+  font-size:12px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  margin-top:12px;
+}
+.action:before{content:"+";display:inline-block;font-size:22px;font-weight:300;width:34px;vertical-align:-2px}
+.action:hover{opacity:.6}
+
+.section{padding:48px 0;border-top:1px solid var(--ink)}
+.section-title{
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  margin-bottom:26px;
+}
+.section-title h3{
+  margin:0;font-size:17px;font-weight:400;letter-spacing:.20em;text-transform:uppercase;
+}
+.meta{font-size:9px;letter-spacing:.16em;color:#999;text-transform:uppercase}
+
+.calendar-nav{display:flex;align-items:center;gap:12px}
+.small-btn{
+  border:0;background:transparent;cursor:pointer;padding:8px;
+  font-size:14px;
+}
+#monthLabel{font-size:11px;letter-spacing:.16em;font-weight:400}
+.calendar-head,.calendar{display:grid;grid-template-columns:repeat(7,1fr)}
+.calendar-head div{
+  text-align:center;font-size:8px;letter-spacing:.12em;color:#999;padding:8px 0;
+}
+.day{
+  min-height:68px;border-top:1px solid #eee;border-right:1px solid #eee;
+  padding:7px 5px;position:relative;background:#fff;
+}
+.day:nth-child(7n){border-right:0}
+.day-num{font-size:10px;color:#555}
+.day.out{opacity:.24}
+.day.today{box-shadow:inset 0 0 0 1px var(--ink)}
+.day.future{background:#fcfcfc}
+.badges{display:flex;flex-direction:column;gap:3px;margin-top:7px}
+.badge{font-size:7px;letter-spacing:.05em;padding:2px 3px;display:inline-block;width:max-content}
+.badge.w{background:#111;color:#fff}
+.badge.a{border:1px solid #aaa;color:#555;background:#fff}
+
+.feed{display:flex;flex-direction:column}
+.entry{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:16px 0;border-top:1px solid #eee;
+}
+.entry-main{font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.entry-meta{font-size:9px;color:#999;letter-spacing:.12em;margin-top:5px}
+.delete{
+  border:0;background:none;color:#999;cursor:pointer;
+  font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+}
+.empty{font-size:11px;letter-spacing:.12em;color:#999;padding:18px 0}
+
+.footer{text-align:center;padding:34px 0 8px;font-size:8px;color:#bbb;letter-spacing:.15em;text-transform:uppercase}
+
+.bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:20;
+  display:flex;justify-content:center;
+  background:rgba(255,255,255,.96);
+  border-top:1px solid #ddd;
+  backdrop-filter:blur(10px);
+}
+.bottom-nav .nav-btn{
+  flex:1;max-width:250px;border:0;background:none;color:#777;
+  padding:20px 8px 18px;cursor:pointer;
+  font-size:10px;letter-spacing:.24em;text-transform:uppercase;
+}
+.bottom-nav .nav-btn.active{color:#111;position:relative}
+.bottom-nav .nav-btn.active:after{
+  content:"";position:absolute;left:30%;right:30%;bottom:10px;height:2px;background:#111;
+}
+.toast{
+  position:fixed;left:50%;bottom:84px;transform:translate(-50%,18px);
+  max-width:min(88vw,560px);padding:12px 15px;background:#111;color:#fff;
+  font-size:11px;letter-spacing:.06em;line-height:1.35;opacity:0;pointer-events:none;
+  transition:.2s;z-index:50;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media(max-width:520px){
+  .app{padding:28px 16px 98px}
+  .hero{padding-bottom:30px}
+  h1{font-size:48px;letter-spacing:.12em}
+  #daysLeft{font-size:48px}
+  .players{padding-top:32px}
+  .player{padding:0 16px}
+  .player:first-child{padding-left:2px}
+  .player:last-child{padding-right:2px}
+  .player-name{font-size:32px;margin-bottom:38px}
+  .metric{margin-bottom:34px}
+  .metric-label{font-size:10px;letter-spacing:.23em}
+  .metric-value{font-size:38px}
+  .track{height:12px}
+  .action{font-size:9px;letter-spacing:.14em;white-space:nowrap}
+  .action:before{width:25px;font-size:18px}
+  .day{min-height:58px;padding:5px 3px}
+  .badge{font-size:6px}
+}
+</style>
+</head>
+
+<body>
+  <main class="app">
+    <header class="hero" id="stats">
+      <div class="eyebrow">06 SEP — 31 DEC 2026</div>
+      <h1><span>THE</span><span>CHALLENGE</span></h1>
+      <div class="countdown">
+        <div id="daysLeft">--</div>
+        <div class="days-label">Days left</div>
+        <div id="dateNow"></div>
+      </div>
+    </header>
+
+    <div class="divider"></div>
+
+    <section class="players">
+      <article class="player tom">
+        <div class="player-name">TOM<div class="name-rule"></div></div>
+
+        <div class="metric">
+          <div class="metric-label">Workouts</div>
+          <div class="metric-value"><span id="tomW">0</span> <small>/ 50</small></div>
+          <div class="track"><div class="fill workout" id="tomWBar"></div></div>
+          <div class="remaining" id="tomWRemaining">50 TO GO</div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-label">Dry days</div>
+          <div class="metric-value"><span id="tomA">0</span> <small>/ 30</small></div>
+          <div class="track"><div class="fill alcohol" id="tomABar"></div></div>
+          <div class="remaining" id="tomARemaining">30 TO GO</div>
+        </div>
+
+        <button class="action" id="addWorkoutTom">Add workout</button>
+        <button class="action" id="addAlcoholTom">Add dry day</button>
+      </article>
+
+      <article class="player bob">
+        <div class="player-name">BOB<div class="name-rule"></div></div>
+
+        <div class="metric">
+          <div class="metric-label">Workouts</div>
+          <div class="metric-value"><span id="bobW">0</span> <small>/ 50</small></div>
+          <div class="track"><div class="fill workout" id="bobWBar"></div></div>
+          <div class="remaining" id="bobWRemaining">50 TO GO</div>
+        </div>
+
+        <div class="metric">
+          <div class="metric-label">Dry days</div>
+          <div class="metric-value"><span id="bobA">0</span> <small>/ 30</small></div>
+          <div class="track"><div class="fill alcohol" id="bobABar"></div></div>
+          <div class="remaining" id="bobARemaining">30 TO GO</div>
+        </div>
+
+        <button class="action" id="addWorkoutBob">Add workout</button>
+        <button class="action" id="addAlcoholBob">Add dry day</button>
+      </article>
+    </section>
+
+    <section class="section" id="calendarSection">
+      <div class="section-title">
+        <h3>Calendar</h3>
+        <div class="calendar-nav">
+          <button class="small-btn" id="prevMonth" aria-label="Previous month">←</button>
+          <strong id="monthLabel"></strong>
+          <button class="small-btn" id="nextMonth" aria-label="Next month">→</button>
+        </div>
+      </div>
+      <div class="calendar-head">
+        <div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div><div>SUN</div>
+      </div>
+      <div class="calendar" id="calendar"></div>
+    </section>
+
+    <section class="section" id="historySection">
+      <div class="section-title">
+        <h3>History</h3>
+        <span class="meta">Newest first</span>
+      </div>
+      <div class="feed" id="feed"></div>
+    </section>
+
+    <div class="footer">Tom + Bob · Shared live scoreboard</div>
+  </main>
+
+  <nav class="bottom-nav" aria-label="App navigation">
+    <button class="nav-btn active" data-target="stats">Stats</button>
+    <button class="nav-btn" data-target="calendarSection">Calendar</button>
+    <button class="nav-btn" data-target="historySection">History</button>
+  </nav>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://ggnohxxmntelkmtggjgf.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_wpizhNNDCQxq6LDtRl91EQ_wHJaOLoj";
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const START = new Date(2026, 8, 6);
+    const END = new Date(2026, 11, 31, 23, 59, 59);
+    const NEW_YEAR = new Date(2027, 0, 1);
+    const GOALS = { workout: 50, alcohol: 30 };
+    const STORAGE_KEY = "newYearsChallenge2026_v1";
+
+    let entries = [];
+    let selectedPlayer = localStorage.getItem("nycPlayer") || "Tom";
+    let currentMonth = new Date(2026, 8, 1);
+
+    const $ = id => document.getElementById(id);
+
+    function loadEntries(){
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+      catch { return []; }
+    }
+
+    function saveEntries(){
+      // Shared challenge data is stored in Supabase.
+    }
+
+    async function loadRemoteEntries(){
+      const { data, error } = await db
+        .from("challenge_entries")
+        .select("id, player, type, entry_date, created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        const details = [error.code, error.message, error.details, error.hint]
+          .filter(Boolean).join(" · ");
+        showToast("LOAD ERROR: " + details);
+        return;
+      }
+
+      entries = (data || []).map(row => ({
+        id: row.id,
+        player: row.player,
+        type: row.type,
+        date: row.entry_date,
+        createdAt: row.created_at
+      }));
+      render();
+    }
+
+    function localDateKey(date = new Date()){
+      const y = date.getFullYear();
+      const m = String(date.getMonth()+1).padStart(2,"0");
+      const d = String(date.getDate()).padStart(2,"0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatDate(key){
+      return new Date(key + "T12:00:00").toLocaleDateString("en-GB", {
+        day:"2-digit", month:"short", year:"numeric"
+      }).toUpperCase();
+    }
+
+    async function addEntry(type, player = selectedPlayer){
+      const now = new Date();
+      const key = localDateKey(now);
+
+      if (now < START || now > END) {
+        showToast("This date is outside the challenge.");
+        return;
+      }
+
+      if (type === "alcohol") {
+        const duplicate = entries.some(e => e.type === "alcohol" && e.player === player && e.date === key);
+        if (duplicate) {
+          showToast(`${player} already logged a dry day today.`);
+          return;
+        }
+      }
+
+      const { error } = await db.from("challenge_entries").insert({
+        player: player,
+        type,
+        entry_date: key
+      });
+
+      if (error) {
+        console.error(error);
+        const details = [error.code, error.message, error.details, error.hint]
+          .filter(Boolean).join(" · ");
+        showToast("SAVE ERROR: " + details);
+        return;
+      }
+
+      await loadRemoteEntries();
+      showToast(type === "workout" ? "Workout added! +1" : "Alcohol-free day added! +1");
+    }
+
+    async function removeEntry(id){
+      const { error } = await db
+        .from("challenge_entries")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        const details = [error.code, error.message, error.details, error.hint]
+          .filter(Boolean).join(" · ");
+        showToast("DELETE ERROR: " + details);
+        return;
+      }
+
+      await loadRemoteEntries();
+      showToast("Registration removed.");
+    }
+
+    function totals(){
+      return {
+        workout: entries.filter(e => e.type === "workout").length,
+        alcohol: entries.filter(e => e.type === "alcohol").length
+      };
+    }
+
+    function playerTotal(player, type){
+      return entries.filter(e => e.player === player && e.type === type).length;
+    }
+
+    function daysInclusive(a,b){
+      return Math.floor((Date.UTC(b.getFullYear(),b.getMonth(),b.getDate()) -
+                         Date.UTC(a.getFullYear(),a.getMonth(),a.getDate())) / 86400000) + 1;
+    }
+
+    function updateHeader(){
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const ny = new Date(NEW_YEAR.getFullYear(), NEW_YEAR.getMonth(), NEW_YEAR.getDate());
+      const remaining = Math.max(0, Math.ceil((ny - today) / 86400000));
+      $("daysLeft").textContent = remaining;
+      $("dateNow").textContent = today.toLocaleDateString("en-GB", {
+        weekday:"long", day:"numeric", month:"long", year:"numeric"
+      }).toUpperCase();
+    }
+
+    function updateScores(){
+      const tomW = playerTotal("Tom","workout");
+      const bobW = playerTotal("Bob","workout");
+      const tomA = playerTotal("Tom","alcohol");
+      const bobA = playerTotal("Bob","alcohol");
+
+      $("tomW").textContent = tomW;
+      $("bobW").textContent = bobW;
+      $("tomA").textContent = tomA;
+      $("bobA").textContent = bobA;
+
+      $("tomWBar").style.width = Math.min(100, tomW / GOALS.workout * 100) + "%";
+      $("bobWBar").style.width = Math.min(100, bobW / GOALS.workout * 100) + "%";
+      $("tomABar").style.width = Math.min(100, tomA / GOALS.alcohol * 100) + "%";
+      $("bobABar").style.width = Math.min(100, bobA / GOALS.alcohol * 100) + "%";
+
+      $("tomWRemaining").textContent = Math.max(0, GOALS.workout - tomW) + " TO GO";
+      $("bobWRemaining").textContent = Math.max(0, GOALS.workout - bobW) + " TO GO";
+      $("tomARemaining").textContent = Math.max(0, GOALS.alcohol - tomA) + " TO GO";
+      $("bobARemaining").textContent = Math.max(0, GOALS.alcohol - bobA) + " TO GO";
+    }
+
+    function renderCalendar(){
+      const cal = $("calendar");
+      cal.innerHTML = "";
+      const y = currentMonth.getFullYear();
+      const m = currentMonth.getMonth();
+      $("monthLabel").textContent = currentMonth.toLocaleDateString("en-GB",{month:"short",year:"numeric"}).toUpperCase();
+
+      const first = new Date(y,m,1);
+      const mondayIndex = (first.getDay()+6)%7;
+      const gridStart = new Date(y,m,1-mondayIndex);
+      const todayKey = localDateKey();
+
+      for(let i=0;i<42;i++){
+        const d = new Date(gridStart);
+        d.setDate(gridStart.getDate()+i);
+        const key = localDateKey(d);
+        const cell = document.createElement("div");
+        cell.className = "day";
+        if(d.getMonth() !== m) cell.classList.add("out");
+        if(key === todayKey) cell.classList.add("today");
+        if(d > new Date()) cell.classList.add("future");
+
+        const num = document.createElement("div");
+        num.className = "day-num";
+        num.textContent = d.getDate();
+        cell.appendChild(num);
+
+        const badges = document.createElement("div");
+        badges.className = "badges";
+        const dayEntries = entries.filter(e => e.date === key);
+        dayEntries.forEach(e => {
+          const badge = document.createElement("span");
+          badge.className = "badge " + (e.type === "workout" ? "w" : "a");
+          badge.textContent = (e.player === "Tom" ? "T" : "B") + (e.type === "workout" ? "·W" : "·A");
+          badges.appendChild(badge);
+        });
+        cell.appendChild(badges);
+        cal.appendChild(cell);
+      }
+    }
+
+    function renderFeed(){
+      const feed = $("feed");
+      feed.innerHTML = "";
+      const sorted = [...entries].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).slice(0,12);
+      if(!sorted.length){
+        feed.innerHTML = '<div class="empty">NO ACTIVITY YET — PRESS START.</div>';
+        return;
+      }
+      sorted.forEach(e => {
+        const row = document.createElement("div");
+        row.className = "entry";
+        row.innerHTML = `
+          <div>
+            <div class="entry-main"><strong>${e.player}</strong> · ${e.type === "workout" ? "WORKOUT" : "ALCOHOL-FREE DAY"} ✓</div>
+            <div class="entry-meta">${formatDate(e.date)}</div>
+          </div>
+          <button class="delete" aria-label="Remove registration">DELETE</button>
+        `;
+        row.querySelector(".delete").addEventListener("click", () => removeEntry(e.id));
+        feed.appendChild(row);
+      });
+    }
+
+    let toastTimer;
+    function showToast(msg){
+      clearTimeout(toastTimer);
+      $("toast").textContent = msg;
+      $("toast").classList.add("show");
+      const delay = msg.includes("ERROR:") ? 12000 : 1800;
+      toastTimer = setTimeout(() => $("toast").classList.remove("show"), delay);
+    }
+
+    function render(){
+      updateHeader();
+      updateScores();
+      renderCalendar();
+      renderFeed();
+    }
+
+    $("addWorkoutTom").addEventListener("click", () => addEntry("workout", "Tom"));
+    $("addAlcoholTom").addEventListener("click", () => addEntry("alcohol", "Tom"));
+    $("addWorkoutBob").addEventListener("click", () => addEntry("workout", "Bob"));
+    $("addAlcoholBob").addEventListener("click", () => addEntry("alcohol", "Bob"));
+    $("prevMonth").addEventListener("click", () => {
+      currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1);
+      if(currentMonth < new Date(2026,8,1)) currentMonth = new Date(2026,8,1);
+      renderCalendar();
+    });
+    $("nextMonth").addEventListener("click", () => {
+      currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()+1, 1);
+      if(currentMonth > new Date(2026,11,1)) currentMonth = new Date(2026,11,1);
+      renderCalendar();
+    });
+
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const target = document.getElementById(btn.dataset.target);
+        if (target) target.scrollIntoView({behavior:"smooth", block:"start"});
+      });
+    });
+
+    render();
+    loadRemoteEntries();
+
+    // Refresh shared data when the app becomes active again.
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) loadRemoteEntries();
+    });
+  </script>
+
+</body>
+</html>
