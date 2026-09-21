@@ -359,14 +359,14 @@ h1 span{display:block}
     async function addEntry(type, player = selectedPlayer, explicitDate = null){
       const now = new Date();
       const key = explicitDate || localDateKey(now);
-      const chosenDate = new Date(key + "T12:00:00");
+      const chosenDate = new Date(key + "T00:00:00");
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       if (chosenDate < START || chosenDate > END || chosenDate > today) { showToast("Choose a date within the challenge, up to today."); return; }
 
       if (type === "alcohol") {
         const duplicate = entries.some(e => e.type === "alcohol" && e.player === player && e.date === key);
         if (duplicate) {
-          showToast(`${player} already logged a dry day today.`);
+          showToast(`${player} already logged a dry day on this date.`);
           return;
         }
       }
@@ -389,9 +389,26 @@ h1 span{display:block}
       showToast(type === "workout" ? "Workout added! +1" : "Alcohol-free day added! +1");
     }
 
-    let pendingWorkoutPlayer=null;
-    function openWorkoutDatePicker(player){pendingWorkoutPlayer=player;$("workoutDateTitle").textContent="Add workout · "+player;$("workoutDateRow").classList.remove("show");$("workoutDateInput").min="2026-09-06";$("workoutDateInput").max=localDateKey();$("workoutDateInput").value=localDateKey();$("workoutDateModal").classList.add("show");}
-    function closeWorkoutDatePicker(){$("workoutDateModal").classList.remove("show");$("workoutDateRow").classList.remove("show");}
+    let pendingEntryPlayer = null;
+    let pendingEntryType = null;
+
+    function openEntryDatePicker(player, type){
+      pendingEntryPlayer = player;
+      pendingEntryType = type;
+      const label = type === "workout" ? "workout" : "dry day";
+      $("workoutDateTitle").textContent = "Add " + label + " · " + player;
+      $("saveWorkoutDate").textContent = "Add " + label;
+      $("workoutDateRow").classList.remove("show");
+      $("workoutDateInput").min = "2026-09-06";
+      $("workoutDateInput").max = localDateKey();
+      $("workoutDateInput").value = localDateKey();
+      $("workoutDateModal").classList.add("show");
+    }
+
+    function closeEntryDatePicker(){
+      $("workoutDateModal").classList.remove("show");
+      $("workoutDateRow").classList.remove("show");
+    }
 
     async function removeEntry(id){
       const { error } = await db
@@ -544,11 +561,33 @@ h1 span{display:block}
     $("addAlcoholTom").addEventListener("click", () => openEntryDatePicker("Tom", "alcohol"));
     $("addWorkoutBob").addEventListener("click", () => openEntryDatePicker("Bob", "workout"));
     $("addAlcoholBob").addEventListener("click", () => openEntryDatePicker("Bob", "alcohol"));
-    $("workoutToday").addEventListener("click", async()=>{const p=pendingWorkoutPlayer;closeWorkoutDatePicker();if(p)await addEntry("workout",p);});
-    $("workoutEarlier").addEventListener("click",()=>{$("workoutDateRow").classList.add("show");});
-    $("cancelWorkoutDate").addEventListener("click",closeWorkoutDatePicker);
-    $("saveWorkoutDate").addEventListener("click",async()=>{const p=pendingWorkoutPlayer,d=$("workoutDateInput").value;if(!d){showToast("Choose a date.");return;}closeWorkoutDatePicker();if(p)await addEntry("workout",p,d);});
-    $("workoutDateModal").addEventListener("click",e=>{if(e.target===$("workoutDateModal"))closeWorkoutDatePicker();});
+
+    $("workoutToday").addEventListener("click", async () => {
+      const player = pendingEntryPlayer;
+      const type = pendingEntryType;
+      closeEntryDatePicker();
+      if (player && type) await addEntry(type, player);
+    });
+
+    $("workoutEarlier").addEventListener("click", () => {
+      $("workoutDateRow").classList.add("show");
+    });
+
+    $("cancelWorkoutDate").addEventListener("click", closeEntryDatePicker);
+
+    $("saveWorkoutDate").addEventListener("click", async () => {
+      const player = pendingEntryPlayer;
+      const type = pendingEntryType;
+      const date = $("workoutDateInput").value;
+      if (!date) { showToast("Choose a date."); return; }
+      closeEntryDatePicker();
+      if (player && type) await addEntry(type, player, date);
+    });
+
+    $("workoutDateModal").addEventListener("click", e => {
+      if (e.target === $("workoutDateModal")) closeEntryDatePicker();
+    });
+
     $("prevMonth").addEventListener("click", () => {
       currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1);
       if(currentMonth < new Date(2026,8,1)) currentMonth = new Date(2026,8,1);
