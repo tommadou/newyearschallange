@@ -193,6 +193,9 @@ h1 span{display:block}
   .day{min-height:58px;padding:5px 3px}
   .badge{font-size:6px}
 }
+
+.date-modal{position:fixed;inset:0;z-index:80;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.22)}
+.date-modal.show{display:flex}.date-sheet{width:min(100%,760px);background:#fff;padding:24px 22px 30px;border-top:1px solid #111}.date-sheet-title{margin:0 0 18px;font-size:13px;font-weight:400;letter-spacing:.22em;text-transform:uppercase}.date-choice{display:block;width:100%;border:0;border-top:1px solid #e5e5e5;background:#fff;text-align:left;padding:17px 0;font-size:12px;letter-spacing:.18em;text-transform:uppercase}.date-row{display:none;padding:16px 0 4px}.date-row.show{display:block}.date-row label{display:block;font-size:9px;letter-spacing:.16em;color:#777;text-transform:uppercase;margin-bottom:8px}.date-row input{width:100%;border:1px solid #bbb;padding:13px;font-size:16px}.date-actions{display:flex;justify-content:flex-end;gap:18px;margin-top:18px}.date-actions button{border:0;background:none;padding:8px 0;font-size:10px;letter-spacing:.16em;text-transform:uppercase}
 </style>
 </head>
 
@@ -286,7 +289,8 @@ h1 span{display:block}
     <button class="nav-btn" data-target="historySection">History</button>
   </nav>
 
-  <div class="toast" id="toast"></div>
+  <div class="date-modal" id="workoutDateModal"><div class="date-sheet"><h2 class="date-sheet-title" id="workoutDateTitle">Add workout</h2><button class="date-choice" id="workoutToday">+ Today</button><button class="date-choice" id="workoutEarlier">+ Earlier date</button><div class="date-row" id="workoutDateRow"><label for="workoutDateInput">Workout date</label><input type="date" id="workoutDateInput"><div class="date-actions"><button id="cancelWorkoutDate">Cancel</button><button id="saveWorkoutDate">Add workout</button></div></div></div></div>
+<div class="toast" id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -352,14 +356,12 @@ h1 span{display:block}
       }).toUpperCase();
     }
 
-    async function addEntry(type, player = selectedPlayer){
+    async function addEntry(type, player = selectedPlayer, explicitDate = null){
       const now = new Date();
-      const key = localDateKey(now);
-
-      if (now < START || now > END) {
-        showToast("This date is outside the challenge.");
-        return;
-      }
+      const key = explicitDate || localDateKey(now);
+      const chosenDate = new Date(key + "T12:00:00");
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (chosenDate < START || chosenDate > END || chosenDate > today) { showToast("Choose a date within the challenge, up to today."); return; }
 
       if (type === "alcohol") {
         const duplicate = entries.some(e => e.type === "alcohol" && e.player === player && e.date === key);
@@ -386,6 +388,10 @@ h1 span{display:block}
       await loadRemoteEntries();
       showToast(type === "workout" ? "Workout added! +1" : "Alcohol-free day added! +1");
     }
+
+    let pendingWorkoutPlayer=null;
+    function openWorkoutDatePicker(player){pendingWorkoutPlayer=player;$("workoutDateTitle").textContent="Add workout · "+player;$("workoutDateRow").classList.remove("show");$("workoutDateInput").min="2026-09-06";$("workoutDateInput").max=localDateKey();$("workoutDateInput").value=localDateKey();$("workoutDateModal").classList.add("show");}
+    function closeWorkoutDatePicker(){$("workoutDateModal").classList.remove("show");$("workoutDateRow").classList.remove("show");}
 
     async function removeEntry(id){
       const { error } = await db
@@ -534,10 +540,15 @@ h1 span{display:block}
       renderFeed();
     }
 
-    $("addWorkoutTom").addEventListener("click", () => addEntry("workout", "Tom"));
-    $("addAlcoholTom").addEventListener("click", () => addEntry("alcohol", "Tom"));
-    $("addWorkoutBob").addEventListener("click", () => addEntry("workout", "Bob"));
-    $("addAlcoholBob").addEventListener("click", () => addEntry("alcohol", "Bob"));
+    $("addWorkoutTom").addEventListener("click", () => openEntryDatePicker("Tom", "workout"));
+    $("addAlcoholTom").addEventListener("click", () => openEntryDatePicker("Tom", "alcohol"));
+    $("addWorkoutBob").addEventListener("click", () => openEntryDatePicker("Bob", "workout"));
+    $("addAlcoholBob").addEventListener("click", () => openEntryDatePicker("Bob", "alcohol"));
+    $("workoutToday").addEventListener("click", async()=>{const p=pendingWorkoutPlayer;closeWorkoutDatePicker();if(p)await addEntry("workout",p);});
+    $("workoutEarlier").addEventListener("click",()=>{$("workoutDateRow").classList.add("show");});
+    $("cancelWorkoutDate").addEventListener("click",closeWorkoutDatePicker);
+    $("saveWorkoutDate").addEventListener("click",async()=>{const p=pendingWorkoutPlayer,d=$("workoutDateInput").value;if(!d){showToast("Choose a date.");return;}closeWorkoutDatePicker();if(p)await addEntry("workout",p,d);});
+    $("workoutDateModal").addEventListener("click",e=>{if(e.target===$("workoutDateModal"))closeWorkoutDatePicker();});
     $("prevMonth").addEventListener("click", () => {
       currentMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth()-1, 1);
       if(currentMonth < new Date(2026,8,1)) currentMonth = new Date(2026,8,1);
